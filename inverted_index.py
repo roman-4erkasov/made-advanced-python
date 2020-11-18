@@ -2,6 +2,8 @@ import argparse
 from pdb import help
 import re
 from collections import defaultdict
+import struct
+import array
 
 
 class InvertedIndex:
@@ -14,39 +16,51 @@ class InvertedIndex:
 
     @classmethod
     def load(cls, filepath: str):
-        pass
+        ii = InvertedIndex()
+        ii.data = dict()
+        with open(filepath, 'w') as fp:
+            for i, line in enumerate(fp):
+                if i % 2 == 0:
+                    fmt = prev
+                    data = line
+                    objects = struct.unpack(fmt, data)
+                    print(objects)
+                prev = line
 
 
-def load_documents(args):
-    pass
+def load_documents(dataset_path: str):
+    docs = dict()
+    with open(dataset_path, "r") as fp:
+        for line in fp:
+            doc = [t for t in re.split(pattern="\W", string=line) if len(t) > 0]
+            doc_id = doc[0]
+            content = set(doc[1:])
+            docs[doc_id] = content
+            break
+    return docs
 
 
-def build_inverted_index(args):
-    pass
+def build_inverted_index(docs: dict, iidx_path: str):
+    iindex = defaultdict(set)
+    for doc_id, content in docs.items():
+        for word in content:
+            if doc_id not in iindex[word]:
+                iindex[word].add(int(doc_id))
+    with open(iidx_path, 'w') as fp:
+        for word, docs in iindex.items():
+            fmt = f"{len(word)}s{len(docs)}i"
+            print(fmt, docs)
+            # data = str(struct.pack(fmt, array.array('b', word).tobytes(), *list(docs)))
+            data = str(struct.pack(fmt, str.encode(word), *list(docs)))
+
+            fp.write(fmt + "\n")
+            fp.write(data + '\n')
 
 
 def buld_action(args):
-    vocab = set()
-    docs = dict()
-    iindex = defaultdict(list)
-    print(args)
-    with open(args.dataset, "r") as fp:
-        for line in fp:
-            doc = [t.lower()     for t in re.split(pattern="\W", string=line) if len(t) > 0]
-            doc_id = doc[0]
-            word = doc[1]
-            content = set(doc[2:])
-            docs[doc_id] = (word, content)
-            vocab |= set(content)
-            for word in content:
-                if doc_id not in iindex[word]:
-                    iindex[word].append(doc_id)
-            # print(vocab)
-            del doc, content
-            # break
-    vocab = sorted(vocab)
-    # for word in vocab:
-    #     if word not in iindex[word]
+    docs = load_documents(args.dataset)
+    build_inverted_index(docs, args.output)
+
 
 def query_action(args):
     print(args)
@@ -95,7 +109,7 @@ def main():
 
 # documents = load_documents("/path/to/dataset")
 # inverted_index = build_inverted_index(documents)
-
+#
 # inverted_index.dump("/path/to/inverted.index")
 # inverted_index = InvertedIndex.load("/path/to/inverted.index")
 # document_ids = inverted_index.query(["two", "words"])
@@ -103,3 +117,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+"""
+build --dataset data/wikipedia_sample --output iidx
+
+"""
