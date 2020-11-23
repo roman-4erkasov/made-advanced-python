@@ -9,7 +9,10 @@ import array
 class InvertedIndex:
     def query(self, words: list) -> list:
         """Return the list of relevant documents for the given query"""
-        pass
+        intersection = None
+        for word in words:
+            if intersection is None:
+                intersection = self.data
 
     def dump(self, filepath: str):
         pass
@@ -64,6 +67,13 @@ def buld_action(args):
 
 def query_action(args):
     print(args)
+    if args.fin_cp is not None:
+        with open(args.fin_cp) as fp:
+            for line in fp:
+                words = line.split()
+
+
+
 
 
 def main():
@@ -89,9 +99,9 @@ def main():
 
     query_parser = subparsers.add_parser("query", help="build inverted index")
     query_parser.add_argument('--index', action="store", dest="index", type=str, required=True)
-    query_parser.add_argument('--query-file-utf8', action="store", dest="fin", type=str)
-    query_parser.add_argument('--query-file-cp1251', action="store", dest="fin", type=str)
-    query_parser.add_argument('--query', action="append")
+    query_parser.add_argument('--query-file-utf8', action="store", dest="fin_utf", type=str)
+    query_parser.add_argument('--query-file-cp1251', action="store", dest="fin_cp", type=str)
+    query_parser.add_argument('--query', action="append", dest="queries")
     query_parser.set_defaults(func=query_action)
 
     args = parser.parse_args()
