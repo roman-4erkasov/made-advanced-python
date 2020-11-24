@@ -30,7 +30,7 @@ def test_get_words_returns_empty_list_for_empty_text():
     assert expected_words == actual_words
 
 
-def test_get_words_rase_exception_for_none():
+def test_get_words_raise_exception_for_none():
     with pytest.raises(TypeError):
         inverted_index.get_words(None)
 
@@ -40,7 +40,6 @@ def test_can_instantiate_inverted_index():
 
 
 def test_can_load_documents(tmpdir):
-
     dataset_file = tmpdir.join("tiny.dataset")
     dataset_file.write(DATASET_TINY_STR)
     documents = inverted_index.load_documents(dataset_file)

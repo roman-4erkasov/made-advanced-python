@@ -33,10 +33,19 @@ class InvertedIndex:
 
 
 def get_words(string):
-    print(f"string: '{string}'")
-    string = re.sub(f"^\W+", "", string)
-    string = re.sub(f"\W+$", "", string)
-    return [t for t in re.split(pattern="\W", string=string) if len(t) > 0]
+    # print(f"string: '{string}'")
+    string = re.sub(r"^\W+", "", string)
+    string = re.sub(r"\W+$", "", string)
+    return [t for t in re.split(pattern=r"\W", string=string) if len(t) > 0]
+
+
+def extract_document(line):
+    line = re.sub(r"\W+$", "", re.sub(r"^\W+", "", line))
+    if len(line) > 0:
+        doc_id, text = [t for t in re.split(pattern=r"\W", string=line, maxsplit=1) if len(t) > 0]
+        return doc_id, re.sub(r"\W+$", "", re.sub(r"^\W+", "", text))
+    else:
+        return None, None
 
 
 def load_documents(dataset_path: str):
@@ -44,11 +53,14 @@ def load_documents(dataset_path: str):
     with open(dataset_path, "r") as fp:
         for line in fp:
             if len(line) > 0:
-                doc = get_words(line)
+                # doc = get_words(line)
                 # doc = [t for t in re.split(pattern="\W", string=line) if len(t) > 0]
-                doc_id = doc[0]
-                content = set(doc[1:])
-                docs[doc_id] = content
+                # doc_id = doc[0]
+                # content = set(doc[1:])
+                # docs[doc_id] = content
+                doc_id, text = extract_document(line)
+                if doc_id is not None:
+                    docs[doc_id] = text
     return docs
 
 
