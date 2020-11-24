@@ -12,7 +12,6 @@ DATASET_TINY_STR = dedent(
 )
 
 
-
 def test_get_words_can_split_lines_correctly():
     text = "   yet or another     word, test"
     # в примере  запятая почему-то не выкидывалась запятая у токена "word,"
