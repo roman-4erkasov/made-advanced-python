@@ -23,23 +23,32 @@ class InvertedIndex:
         ii.data = dict()
         with open(filepath, 'w') as fp:
             for i, line in enumerate(fp):
-                if i % 2 == 0:
+                if i % 2 == 0 and len(line) > 0:
                     fmt = prev
                     data = line
                     objects = struct.unpack(fmt, data)
                     print(objects)
-                prev = line
+                if len(line) > 0:
+                    prev = line
+
+
+def get_words(string):
+    print(f"string: '{string}'")
+    string = re.sub(f"^\W+", "", string)
+    string = re.sub(f"\W+$", "", string)
+    return [t for t in re.split(pattern="\W", string=string) if len(t) > 0]
 
 
 def load_documents(dataset_path: str):
     docs = dict()
     with open(dataset_path, "r") as fp:
         for line in fp:
-            doc = [t for t in re.split(pattern="\W", string=line) if len(t) > 0]
-            doc_id = doc[0]
-            content = set(doc[1:])
-            docs[doc_id] = content
-            break
+            if len(line) > 0:
+                doc = get_words(line)
+                # doc = [t for t in re.split(pattern="\W", string=line) if len(t) > 0]
+                doc_id = doc[0]
+                content = set(doc[1:])
+                docs[doc_id] = content
     return docs
 
 
@@ -71,9 +80,6 @@ def query_action(args):
         with open(args.fin_cp) as fp:
             for line in fp:
                 words = line.split()
-
-
-
 
 
 def main():
