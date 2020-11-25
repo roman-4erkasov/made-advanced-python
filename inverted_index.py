@@ -42,7 +42,7 @@ def get_words(string):
 def extract_document(line):
     line = re.sub(r"\W+$", "", re.sub(r"^\W+", "", line))
     if len(line) > 0:
-        doc_id, text = [t for t in re.split(pattern=r"\W", string=line, maxsplit=1) if len(t) > 0]
+        doc_id, text = [t for t in re.split(pattern=r"\W+", string=line, maxsplit=1) if len(t) > 0]
         return doc_id, re.sub(r"\W+$", "", re.sub(r"^\W+", "", text))
     else:
         return None, None
