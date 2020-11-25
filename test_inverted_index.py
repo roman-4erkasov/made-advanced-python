@@ -26,13 +26,13 @@ def tiny_dataset_fio(tmpdir):
 
 
 @pytest.fixture()
-def wikipedia_document():
+def wikipedia_documents():
     documents = inverted_index.load_documents(DATASET_BIG_FPATH)
     return documents
 
 
 @pytest.fixture()
-def tiny_wikipedia_document():
+def small_sample_wikipedia_documents():
     documents = inverted_index.load_documents(DATASET_TINY_FPATH)
     return documents
 
@@ -97,17 +97,10 @@ def test_query_inverted_index_intersect_results(tiny_dataset_fio, query, etalon_
     )
 
 
-
-
-def test_can_load_inverted_index_from_file(tiny_dataset_fio):
-    pass
-
-
-def test_can_load_tiny_wikipedia_sample(tiny_dataset_fio):
-    documents = inverted_index.load_documents(tiny_dataset_fio)
-    pytest.set_trace()
+def test_can_load_tiny_wikipedia_sample():
+    documents = inverted_index.load_documents(DATASET_TINY_FPATH)
     assert len(documents) == 15, (
-        "you incorrectly loaded Wikipedia sample"
+        "you incorrectly loaded small Wikipedia sample"
     )
 
 
@@ -117,3 +110,39 @@ def test_can_load_wikipedia_sample():
     assert len(documents) == 4100, (
         "you incorrectly loaded Wikipedia sample"
     )
+
+
+def test_can_build_and_query_small_inverted_index(small_sample_wikipedia_document):
+    wiki_inverted_index = inverted_index.build_inverted_index(small_sample_wikipedia_document)
+    doc_ids = wiki_inverted_index.query(["often"])
+    assert isinstance(doc_ids, list), "Inverted index query should return list"
+
+
+def test_can_build_and_query_inverted_index(sample_wikipedia_document):
+    wiki_inverted_index = inverted_index.build_inverted_index(sample_wikipedia_document)
+    doc_ids = wiki_inverted_index.query(["often"])
+    assert isinstance(doc_ids, list), "Inverted index query should return list"
+
+
+@pytest.fixture()
+def small_wiki_inverted_index(small_sample_wikipedia_documents):
+    inv_index = inverted_index.build_inverted_index(small_sample_wikipedia_documents)
+    return inv_index
+
+
+@pytest.fixture()
+def wiki_inverted_index(sample_wikipedia_documents):
+    inv_index = inverted_index.build_inverted_index(small_sample_wikipedia_documents)
+    return inv_index
+
+
+@pytest.mark.skip
+def test_can_dump_and_load_inverted_index(tmpdir, wiki_inverted_index):
+    index_fio = tmpdir.join("index.dump")
+    wiki_inverted_index.dump(index_fio)
+    loaded_inverted_index = inverted_index.InvertedIndex.load(index_fio)
+
+
+
+def test_can_load_inverted_index_from_file(tiny_dataset_fio):
+    pass

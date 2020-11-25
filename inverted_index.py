@@ -21,7 +21,13 @@ class InvertedIndex:
         return list(intersection)
 
     def dump(self, filepath: str):
-        pass
+        with open(filepath, 'w') as fp:
+            for word, docs in self.data.items():
+                fmt = f"{len(word)}s{len(docs)}i"
+                # print(fmt, docs)
+                data = str(struct.pack(fmt, str.encode(word), *list(docs)))
+                fp.write(fmt + "\n")
+                fp.write(data + '\n')
 
     @classmethod
     def load(cls, filepath: str):
@@ -36,6 +42,17 @@ class InvertedIndex:
                     print(objects)
                 if len(line) > 0:
                     prev = line
+
+    def __eq__(self, other):
+        if self.data.keys() != other.keys():
+            return False
+        else:
+            result = True
+            for key in self.data.keys():
+                if self.data[key] != other[key]:
+                    result = False
+                    break
+            return result
 
 
 def get_words(string):
@@ -98,7 +115,7 @@ def buld_action(args):
 
 
 def query_action(args):
-    print(args)
+    # print(args)
     if args.fin_cp is not None:
         with open(args.fin_cp) as fp:
             for line in fp:
