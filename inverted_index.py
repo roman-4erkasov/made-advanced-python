@@ -7,12 +7,18 @@ import array
 
 
 class InvertedIndex:
+    def __init__(self):
+        self.data = None
+
     def query(self, words: list) -> list:
         """Return the list of relevant documents for the given query"""
         intersection = None
         for word in words:
             if intersection is None:
-                intersection = self.data
+                intersection = self.data[word]
+            else:
+                intersection &= self.data[word]
+        return list(intersection)
 
     def dump(self, filepath: str):
         pass
@@ -43,7 +49,7 @@ def extract_document(line):
     line = re.sub(r"\W+$", "", re.sub(r"^\W+", "", line))
     if len(line) > 0:
         doc_id, text = [t for t in re.split(pattern=r"\W+", string=line, maxsplit=1) if len(t) > 0]
-        return doc_id, re.sub(r"\W+$", "", re.sub(r"^\W+", "", text))
+        return str(doc_id), re.sub(r"\W+$", "", re.sub(r"^\W+", "", text))
     else:
         return None, None
 
@@ -64,21 +70,26 @@ def load_documents(dataset_path: str):
     return docs
 
 
-def build_inverted_index(docs: dict, iidx_path: str):
-    iindex = defaultdict(set)
-    for doc_id, content in docs.items():
+def build_inverted_index(docs: dict):
+    iidx_data = defaultdict(set)
+    for doc_id, text in docs.items():
+        content = set(get_words(text))
         for word in content:
-            if doc_id not in iindex[word]:
-                iindex[word].add(int(doc_id))
-    with open(iidx_path, 'w') as fp:
-        for word, docs in iindex.items():
-            fmt = f"{len(word)}s{len(docs)}i"
-            print(fmt, docs)
-            # data = str(struct.pack(fmt, array.array('b', word).tobytes(), *list(docs)))
-            data = str(struct.pack(fmt, str.encode(word), *list(docs)))
-
-            fp.write(fmt + "\n")
-            fp.write(data + '\n')
+            if doc_id not in iidx_data[word]:
+                iidx_data[word].add(doc_id)
+    iidx = InvertedIndex()
+    iidx.data = iidx_data
+    return iidx
+    # iidx_path: str
+    # with open(iidx_path, 'w') as fp:
+    #     for word, docs in iidx_data.items():
+    #         fmt = f"{len(word)}s{len(docs)}i"
+    #         print(fmt, docs)
+    #         # data = str(struct.pack(fmt, array.array('b', word).tobytes(), *list(docs)))
+    #         data = str(struct.pack(fmt, str.encode(word), *list(docs)))
+    #
+    #         fp.write(fmt + "\n")
+    #         fp.write(data + '\n')
 
 
 def buld_action(args):
