@@ -145,3 +145,12 @@ def test_can_dump_and_load_inverted_index(tmpdir, wiki_inverted_index):
     return wiki_inverted_index == loaded_inverted_index, (
         "Load should return the same inverted index"
     )
+
+
+def test_can_dump_and_load_small_inverted_index(tmpdir, small_wiki_inverted_index):
+    index_fio = tmpdir.join("index.dump")
+    wiki_inverted_index.dump(index_fio)
+    loaded_inverted_index = inverted_index.InvertedIndex.load(index_fio)
+    return wiki_inverted_index == loaded_inverted_index, (
+        "Load should return the same inverted index"
+    )

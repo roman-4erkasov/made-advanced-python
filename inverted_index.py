@@ -6,6 +6,41 @@ import struct
 import array
 
 
+class StoragePolicy:
+    @staticmethod
+    def dump(word_to_doc_mapping, filepath):
+        pass
+
+    @staticmethod
+    def load(filepath):
+        pass
+
+
+class SimplePolicy(StoragePolicy):
+    @staticmethod
+    def dump(word_to_doc_mapping, filepath):
+        with open(filepath, 'w') as fp:
+            for word, docs in self.data.items():
+                fmt = f"{len(word)}s{len(docs)}i"
+                data = str(struct.pack(fmt, str.encode(word), *list(docs)))
+                fp.write(fmt + "\n")
+                fp.write(data + '\n')
+
+    @staticmethod
+    def load(filepath):
+        result = dict()
+        with open(filepath, 'w') as fp:
+            for i, line in enumerate(fp):
+                if i % 2 == 0 and len(line) > 0:
+                    fmt = prev
+                    data = line
+                    objects = struct.unpack(fmt, data)
+                    result[objects[0]] = objects[1:]
+                if len(line) > 0:
+                    prev = line
+        return result
+
+
 class InvertedIndex:
     def __init__(self):
         self.data = None
@@ -20,28 +55,19 @@ class InvertedIndex:
                 intersection &= self.data[word]
         return list(intersection)
 
-    def dump(self, filepath: str):
-        with open(filepath, 'w') as fp:
-            for word, docs in self.data.items():
-                fmt = f"{len(word)}s{len(docs)}i"
-                # print(fmt, docs)
-                data = str(struct.pack(fmt, str.encode(word), *list(docs)))
-                fp.write(fmt + "\n")
-                fp.write(data + '\n')
+    def dump(self, filepath: str, storage_policy=None):
+        if storage_policy is None:
+            storage_policy = SimplePolicy
+        storage_policy.dump(word_to_doc_mapping=self.data, filepath=filepath)
+
 
     @classmethod
-    def load(cls, filepath: str):
+    def load(cls, filepath: str, storage_policy=None):
+        if storage_policy is None:
+            storage_policy = SimplePolicy
         ii = InvertedIndex()
-        ii.data = dict()
-        with open(filepath, 'w') as fp:
-            for i, line in enumerate(fp):
-                if i % 2 == 0 and len(line) > 0:
-                    fmt = prev
-                    data = line
-                    objects = struct.unpack(fmt, data)
-                    print(objects)
-                if len(line) > 0:
-                    prev = line
+        ii.data = storage_policy.load(filepath=filepath)
+        return ii
 
     def __eq__(self, other):
         if self.data.keys() != other.keys():
