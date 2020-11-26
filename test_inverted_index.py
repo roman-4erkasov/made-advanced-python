@@ -112,14 +112,15 @@ def test_can_load_wikipedia_sample():
     )
 
 
-def test_can_build_and_query_small_inverted_index(small_sample_wikipedia_document):
-    wiki_inverted_index = inverted_index.build_inverted_index(small_sample_wikipedia_document)
+def test_can_build_and_query_small_inverted_index(small_sample_wikipedia_documents):
+    wiki_inverted_index = inverted_index.build_inverted_index(small_sample_wikipedia_documents)
     doc_ids = wiki_inverted_index.query(["often"])
     assert isinstance(doc_ids, list), "Inverted index query should return list"
 
 
-def test_can_build_and_query_inverted_index(sample_wikipedia_document):
-    wiki_inverted_index = inverted_index.build_inverted_index(sample_wikipedia_document)
+@pytest.mark.skip
+def test_can_build_and_query_inverted_index(wikipedia_documents):
+    wiki_inverted_index = inverted_index.build_inverted_index(wikipedia_documents)
     doc_ids = wiki_inverted_index.query(["often"])
     assert isinstance(doc_ids, list), "Inverted index query should return list"
 
@@ -141,8 +142,6 @@ def test_can_dump_and_load_inverted_index(tmpdir, wiki_inverted_index):
     index_fio = tmpdir.join("index.dump")
     wiki_inverted_index.dump(index_fio)
     loaded_inverted_index = inverted_index.InvertedIndex.load(index_fio)
-
-
-
-def test_can_load_inverted_index_from_file(tiny_dataset_fio):
-    pass
+    return wiki_inverted_index == loaded_inverted_index, (
+        "Load should return the same inverted index"
+    )

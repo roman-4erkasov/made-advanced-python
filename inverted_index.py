@@ -97,21 +97,11 @@ def build_inverted_index(docs: dict):
     iidx = InvertedIndex()
     iidx.data = iidx_data
     return iidx
-    # iidx_path: str
-    # with open(iidx_path, 'w') as fp:
-    #     for word, docs in iidx_data.items():
-    #         fmt = f"{len(word)}s{len(docs)}i"
-    #         print(fmt, docs)
-    #         # data = str(struct.pack(fmt, array.array('b', word).tobytes(), *list(docs)))
-    #         data = str(struct.pack(fmt, str.encode(word), *list(docs)))
-    #
-    #         fp.write(fmt + "\n")
-    #         fp.write(data + '\n')
 
 
 def buld_action(args):
     docs = load_documents(args.dataset)
-    build_inverted_index(docs, args.output)
+    build_inverted_index(docs)
 
 
 def query_action(args):
