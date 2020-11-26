@@ -20,7 +20,8 @@ class SimplePolicy(StoragePolicy):
     @staticmethod
     def dump(word_to_doc_mapping, filepath):
         with open(filepath, 'w') as fp:
-            for word, docs in self.data.items():
+            for word, docs in word_to_doc_mapping.items():
+
                 fmt = f"{len(word)}s{len(docs)}i"
                 data = str(struct.pack(fmt, str.encode(word), *list(docs)))
                 fp.write(fmt + "\n")
@@ -119,7 +120,7 @@ def build_inverted_index(docs: dict):
         content = set(get_words(text))
         for word in content:
             if doc_id not in iidx_data[word]:
-                iidx_data[word].add(doc_id)
+                iidx_data[word].add(int(doc_id))
     iidx = InvertedIndex()
     iidx.data = iidx_data
     return iidx
