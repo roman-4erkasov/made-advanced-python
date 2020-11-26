@@ -4,7 +4,6 @@ from textwrap import dedent
 from pdb import set_trace
 import os
 
-
 DATASET_TINY_STR = dedent(
     """
     123    some words A_word  and nothing
@@ -89,7 +88,6 @@ def test_can_load_documents(tiny_dataset_fio):
 def test_query_inverted_index_intersect_results(tiny_dataset_fio, query, etalon_answer):
     documents = inverted_index.load_documents(tiny_dataset_fio)
     print(documents)
-    # pytest.set_trace()
     tiny_inverted_index = inverted_index.build_inverted_index(documents)
     answer = tiny_inverted_index.query(query)
     assert sorted(answer) == sorted(etalon_answer), (
@@ -132,9 +130,18 @@ def small_wiki_inverted_index(small_sample_wikipedia_documents):
 
 
 @pytest.fixture()
-def wiki_inverted_index(sample_wikipedia_documents):
-    inv_index = inverted_index.build_inverted_index(small_sample_wikipedia_documents)
+def wiki_inverted_index(wikipedia_documents):
+    inv_index = inverted_index.build_inverted_index(wikipedia_documents)
     return inv_index
+
+
+def test_can_dump_and_load_small_inverted_index(tmpdir, small_wiki_inverted_index):
+    index_fio = tmpdir.join("index.dump")
+    small_wiki_inverted_index.dump(index_fio)
+    loaded_inverted_index = inverted_index.InvertedIndex.load(index_fio)
+    return loaded_inverted_index == small_wiki_inverted_index, (
+        "Load should return the same inverted index"
+    )
 
 
 @pytest.mark.skip
@@ -142,15 +149,109 @@ def test_can_dump_and_load_inverted_index(tmpdir, wiki_inverted_index):
     index_fio = tmpdir.join("index.dump")
     wiki_inverted_index.dump(index_fio)
     loaded_inverted_index = inverted_index.InvertedIndex.load(index_fio)
-    return wiki_inverted_index == loaded_inverted_index, (
+    return loaded_inverted_index == wiki_inverted_index, (
         "Load should return the same inverted index"
     )
 
 
-def test_can_dump_and_load_small_inverted_index(tmpdir, small_wiki_inverted_index):
+def test_can_save_and_load_simple_policy_tiny(tmpdir, small_wiki_inverted_index):
     index_fio = tmpdir.join("index.dump")
-    small_wiki_inverted_index.dump(index_fio)
-    loaded_inverted_index = inverted_index.InvertedIndex.load(index_fio)
-    return wiki_inverted_index == loaded_inverted_index, (
+    mapping = small_wiki_inverted_index.data
+    inverted_index.SimplePolicy.dump(mapping, index_fio)
+    mapping_loaded = inverted_index.SimplePolicy.load(index_fio)
+    return mapping == mapping_loaded, (
         "Load should return the same inverted index"
+    )
+
+
+@pytest.mark.parametrize(
+    "left, right, are_equal",
+    [
+        pytest.param(
+            {
+                "A_word":[123, 37],
+            },
+            {
+                "A_word": [123, 37],
+            },
+            True
+        ),
+        pytest.param(
+            {
+                "A_word":[123, 37],
+            },
+            {
+                "B_word": [123, 37],
+            },
+            False
+        ),
+        pytest.param(
+            {
+                "A_word":[123, 37],
+            },
+            {
+                "A_word": [123, 38],
+            },
+            False
+        ),
+        pytest.param(
+            {
+                "A_word":[123, 37],
+            },
+            {
+                "A_word": [123],
+            },
+            False
+        ),
+        pytest.param(
+            {
+                "A_word":[123],
+            },
+            {
+                "A_word": [123, 37],
+            },
+            False
+        ),
+        pytest.param(
+            {
+                "A_word":[123, 37],
+                "B_word": [124, 38],
+            },
+            {
+                "B_word": [124, 38],
+                "A_word": [123, 37],
+            },
+            True
+        ),
+        pytest.param(
+            {
+                "A_word": [123, 37],
+            },
+            {
+                "A_word": [123, 37],
+                "B_word": [124, 38],
+            },
+            False
+        ),
+        pytest.param(
+            {
+                "A_word": [123, 37],
+                "B_word": [124, 38],
+            },
+            {
+                "A_word": [123, 37],
+            },
+            False
+        ),
+    ],
+)
+def test_inverted_index_equality(left, right, are_equal):
+    idx_left = inverted_index.InvertedIndex()
+    idx_left.data = left
+
+    idx_right = inverted_index.InvertedIndex()
+    idx_right.data = right
+
+    assert are_equal == (idx_left==idx_right), (
+        "Method InveredIndex.__eq__ works incorrectly"
     )

@@ -30,11 +30,12 @@ class SimplePolicy(StoragePolicy):
     @staticmethod
     def load(filepath):
         result = dict()
-        with open(filepath, 'w') as fp:
+        prev = None
+        with open(filepath, 'r') as fp:
             for i, line in enumerate(fp):
-                if i % 2 == 0 and len(line) > 0:
-                    fmt = prev
-                    data = line
+                if i % 2 == 1 and len(line) > 0:
+                    fmt = prev[:-1]
+                    data = eval(line[:-1])
                     objects = struct.unpack(fmt, data)
                     result[objects[0]] = objects[1:]
                 if len(line) > 0:
@@ -54,7 +55,7 @@ class InvertedIndex:
                 intersection = self.data[word]
             else:
                 intersection &= self.data[word]
-        return list(intersection)
+        return [str(v) for v in intersection]
 
     def dump(self, filepath: str, storage_policy=None):
         if storage_policy is None:
@@ -71,12 +72,12 @@ class InvertedIndex:
         return ii
 
     def __eq__(self, other):
-        if self.data.keys() != other.keys():
+        if self.data.keys() != other.data.keys():
             return False
         else:
             result = True
             for key in self.data.keys():
-                if self.data[key] != other[key]:
+                if self.data[key] != other.data[key]:
                     result = False
                     break
             return result
