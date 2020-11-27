@@ -4,6 +4,7 @@ import re
 from collections import defaultdict
 import struct
 import array
+from pdb import set_trace
 
 
 class StoragePolicy:
@@ -37,7 +38,7 @@ class SimplePolicy(StoragePolicy):
                     fmt = prev[:-1]
                     data = eval(line[:-1])
                     objects = struct.unpack(fmt, data)
-                    result[objects[0]] = objects[1:]
+                    result[objects[0].decode("utf-8")] = set(objects[1:])
                 if len(line) > 0:
                     prev = line
         return result
@@ -73,11 +74,13 @@ class InvertedIndex:
 
     def __eq__(self, other):
         if self.data.keys() != other.data.keys():
+            # set_trace()
             return False
         else:
             result = True
             for key in self.data.keys():
                 if self.data[key] != other.data[key]:
+                    # set_trace()
                     result = False
                     break
             return result
@@ -124,7 +127,8 @@ def build_inverted_index(docs: dict):
 
 def buld_action(args):
     docs = load_documents(args.dataset)
-    build_inverted_index(docs)
+    idx = build_inverted_index(docs)
+    idx.dump(args.output)
 
 
 def query_action(args):

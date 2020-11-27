@@ -5,6 +5,7 @@ from pdb import set_trace
 import os
 from collections import namedtuple
 
+
 DATASET_TINY_STR = dedent(
     """
     123    some words A_word  and nothing
@@ -23,6 +24,12 @@ def tiny_dataset_fio(tmpdir):
     dataset_fio = tmpdir.join("tiny_dataset.txt")
     dataset_fio.write(DATASET_TINY_STR)
     return dataset_fio
+
+
+@pytest.fixture()
+def tiny_document_sample(tiny_dataset_fio):
+    documents = inverted_index.load_documents(tiny_dataset_fio)
+    return documents
 
 
 @pytest.fixture()
@@ -127,6 +134,12 @@ def test_can_build_and_query_inverted_index(wikipedia_documents):
 @pytest.fixture()
 def small_wiki_inverted_index(small_sample_wikipedia_documents):
     inv_index = inverted_index.build_inverted_index(small_sample_wikipedia_documents)
+    return inv_index
+
+
+@pytest.fixture()
+def tiny_inverted_index(tiny_document_sample):
+    inv_index = inverted_index.build_inverted_index(tiny_document_sample)
     return inv_index
 
 
@@ -258,11 +271,33 @@ def test_inverted_index_equality(left, right, are_equal):
     )
 
 
-def test_build_action_tiny_dataset(tiny_dataset_fio, tmpdir):
+@pytest.mark.skip
+def test_build_action_smal_wiki(small_wiki_inverted_index, tmpdir):
     fpath = tmpdir.join("output")
-    Args = namedtuple("Args", [ "dataset", "output"])
-    args = Args(dataset=tiny_dataset_fio, output=fpath)
+    Args = namedtuple("Args", ["dataset", "output"])
+    args = Args(dataset=DATASET_TINY_FPATH, output=fpath)
     inverted_index.buld_action(args)
 
     loaded_index = inverted_index.InvertedIndex.load(fpath)
+    assert small_wiki_inverted_index == loaded_index, (
+        f"index was built incorrectly etalon={small_wiki_inverted_index.data} actual={loaded_index.data}"
+    )
 
+
+def test_build_action_tiny_dataset(tiny_dataset_fio, tmpdir):
+
+    # make etalone
+    docs = inverted_index.load_documents(tiny_dataset_fio)
+    etalon = inverted_index.build_inverted_index(docs)
+
+    # make actual
+    fpath = tmpdir.join("tiny_output")
+
+    Args = namedtuple("Args", ["dataset", "output"])
+    args = Args(dataset=tiny_dataset_fio, output=fpath)
+    inverted_index.buld_action(args)
+    loaded_index = inverted_index.InvertedIndex.load(fpath)
+
+    assert etalon == loaded_index, (
+        f"index was built incorrectly etalone={etalon.data} actual={loaded_index.data}"
+    )
