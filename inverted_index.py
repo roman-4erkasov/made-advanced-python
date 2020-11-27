@@ -104,11 +104,6 @@ def load_documents(dataset_path: str):
     with open(dataset_path, "r") as fp:
         for line in fp:
             if len(line) > 0:
-                # doc = get_words(line)
-                # doc = [t for t in re.split(pattern="\W", string=line) if len(t) > 0]
-                # doc_id = doc[0]
-                # content = set(doc[1:])
-                # docs[doc_id] = content
                 doc_id, text = extract_document(line)
                 if doc_id is not None:
                     docs[doc_id] = text

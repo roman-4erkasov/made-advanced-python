@@ -3,6 +3,7 @@ import inverted_index
 from textwrap import dedent
 from pdb import set_trace
 import os
+from collections import namedtuple
 
 DATASET_TINY_STR = dedent(
     """
@@ -255,3 +256,13 @@ def test_inverted_index_equality(left, right, are_equal):
     assert are_equal == (idx_left==idx_right), (
         "Method InveredIndex.__eq__ works incorrectly"
     )
+
+
+def test_build_action_tiny_dataset(tiny_dataset_fio, tmpdir):
+    fpath = tmpdir.join("output")
+    Args = namedtuple("Args", [ "dataset", "output"])
+    args = Args(dataset=tiny_dataset_fio, output=fpath)
+    inverted_index.buld_action(args)
+
+    loaded_index = inverted_index.InvertedIndex.load(fpath)
+
