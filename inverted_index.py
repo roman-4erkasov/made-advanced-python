@@ -132,10 +132,21 @@ def buld_action(args):
 
 
 def query_action(args):
-    if args.fin_cp is not None:
-        with open(args.fin_cp) as fp:
-            for line in fp:
-                words = line.split()
+    if args.index is None:
+        raise Exception("index is undefined")
+    else:
+        idx = InvertedIndex.load(args.index)
+    if args.queries is not None:
+        for query_s in args.queries:
+            query = [x for x in query_s.split()]
+            set_trace()
+            res = idx.query(query)
+            print(" ".join(res))
+
+    # if args.fin_cp is not None:
+    #     with open(args.fin_cp) as fp:
+    #         for line in fp:
+    #             words = line.split()
 
 
 def main():

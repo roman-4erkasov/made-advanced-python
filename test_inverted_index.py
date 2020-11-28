@@ -303,14 +303,33 @@ def test_build_action_tiny_dataset(tiny_dataset_fio, tmpdir):
     )
 
 
+@pytest.fixture()
+def tiny_inverted_index_fio(tmpdir, tiny_document_sample):
+    fout = tmpdir.join("tiny_index")
+    idx = inverted_index.build_inverted_index(tiny_document_sample)
+    idx.dump(fout)
+    return fout
+
+
 @pytest.mark.parametrize(
     "file_cp, file_utf, queries, output",
     [
-        pytest.param(None, None, ["A_word"]),
-        pytest.param("B_word", "2", "37"),
+        pytest.param(None, None, ["A_word"], "123 37\n"),
+        # pytest.param("B_word", "2", "37"),
     ],
 )
-def test_queries_option_works_tiny(capsys, file_cp, file_utf, queries):
-    Args = namedtuple("Args", ["file_cp", "file_utf", "queries"])
-    args = Args(file_cp=file_cp, file_utf=file_utf, queries=queries)
+def test_valid_cli_queries(capsys, tiny_inverted_index_fio, file_cp, file_utf, queries, output):
+    Args = namedtuple(
+        "Args", ["index", "file_cp", "file_utf", "queries"]
+    )
+    args = Args(
+        index=tiny_inverted_index_fio,
+        file_cp=file_cp,
+        file_utf=file_utf,
+        queries=queries
+    )
     inverted_index.query_action(args)
+    out, err = capsys.readouterr()
+    assert output == out, (
+        "incorrect stdout output"
+    )
