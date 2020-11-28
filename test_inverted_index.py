@@ -301,3 +301,16 @@ def test_build_action_tiny_dataset(tiny_dataset_fio, tmpdir):
     assert etalon == loaded_index, (
         f"index was built incorrectly etalone={etalon.data} actual={loaded_index.data}"
     )
+
+
+@pytest.mark.parametrize(
+    "file_cp, file_utf, queries, output",
+    [
+        pytest.param(None, None, ["A_word"]),
+        pytest.param("B_word", "2", "37"),
+    ],
+)
+def test_queries_option_works_tiny(capsys, file_cp, file_utf, queries):
+    Args = namedtuple("Args", ["file_cp", "file_utf", "queries"])
+    args = Args(file_cp=file_cp, file_utf=file_utf, queries=queries)
+    inverted_index.query_action(args)

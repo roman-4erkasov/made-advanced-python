@@ -132,7 +132,6 @@ def buld_action(args):
 
 
 def query_action(args):
-    # print(args)
     if args.fin_cp is not None:
         with open(args.fin_cp) as fp:
             for line in fp:
