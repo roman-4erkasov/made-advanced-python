@@ -22,9 +22,10 @@ class SimplePolicy(StoragePolicy):
     def dump(word_to_doc_mapping, filepath):
         with open(filepath, 'w') as fp:
             for word, docs in word_to_doc_mapping.items():
-
-                fmt = f"{len(word)}s{len(docs)}i"
-                data = str(struct.pack(fmt, str.encode(word), *list(docs)))
+                # w_len = struct.calcsize(word)
+                word_enc = word.encode()
+                fmt = f"{len(word_enc)}s{len(docs)}i"
+                data = str(struct.pack(fmt, word_enc, *list(docs)))
                 fp.write(fmt + "\n")
                 fp.write(data + '\n')
 
@@ -32,12 +33,13 @@ class SimplePolicy(StoragePolicy):
     def load(filepath):
         result = dict()
         prev = None
-        with open(filepath, 'r') as fp:
+        with open(filepath, 'rb') as fp:
             for i, line in enumerate(fp):
                 if i % 2 == 1 and len(line) > 0:
                     fmt = prev[:-1]
                     data = eval(line[:-1])
                     objects = struct.unpack(fmt, data)
+                    # print(objects)
                     result[objects[0].decode("utf-8")] = set(objects[1:])
                 if len(line) > 0:
                     prev = line
@@ -53,7 +55,7 @@ class InvertedIndex:
         intersection = None
         for word in words:
             if intersection is None:
-                intersection = self.data[word]
+                intersection = self.data[word].copy()
             else:
                 intersection &= self.data[word]
         return [str(v) for v in intersection]
@@ -62,7 +64,6 @@ class InvertedIndex:
         if storage_policy is None:
             storage_policy = SimplePolicy
         storage_policy.dump(word_to_doc_mapping=self.data, filepath=filepath)
-
 
     @classmethod
     def load(cls, filepath: str, storage_policy=None):
@@ -131,22 +132,54 @@ def buld_action(args):
     idx.dump(args.output)
 
 
-def query_action(args):
-    if args.index is None:
-        raise Exception("index is undefined")
-    else:
-        idx = InvertedIndex.load(args.index)
-    if args.queries is not None:
-        for query_s in args.queries:
+def process_queries(inv_index, queries):
+    if queries is not None:
+        for query_s in queries:
             query = [x for x in query_s.split()]
-            set_trace()
-            res = idx.query(query)
+            # set_trace()
+            res = inv_index.query(query)
             print(" ".join(res))
 
-    # if args.fin_cp is not None:
-    #     with open(args.fin_cp) as fp:
-    #         for line in fp:
-    #             words = line.split()
+
+def query_action(arguments):
+    # set_trace()
+    count = 0
+    for obj in [
+        arguments.file_cp,
+        arguments.file_utf,
+        arguments.queries
+    ]:
+        if obj is not None:
+            count += 1
+    if count != 1:
+        return Exception(
+            "You must use one and only one of "
+            "the following arguments:\n"
+            "  --query query1 [--query query2] or "
+            "  --query-file-cp1251 or\n"
+            "  --query-file-utf8"
+        )
+    # if args.file_cp is not None
+    if arguments.index is None:
+        raise Exception("index is undefined")
+    else:
+        idx = InvertedIndex.load(arguments.index)
+    if arguments.queries is not None:
+        process_queries(idx, arguments.queries)
+    elif arguments.file_cp is not None:
+        queries = []
+        with open(arguments.file_cp, encoding='cp1251') as fp:
+            for line in fp:
+                queries.append(line)
+        process_queries(idx, queries)
+    elif arguments.file_utf is not None:
+        queries = []
+        with open(arguments.file_utf, encoding='utf8') as fp:
+            for line in fp:
+                queries.append(line)
+        process_queries(idx, queries)
+    else:
+        raise Exception("You must define --query or ----query-file-cp1251 or --query-file-utf8")
 
 
 def main():
@@ -172,8 +205,8 @@ def main():
 
     query_parser = subparsers.add_parser("query", help="build inverted index")
     query_parser.add_argument('--index', action="store", dest="index", type=str, required=True)
-    query_parser.add_argument('--query-file-utf8', action="store", dest="fin_utf", type=str)
-    query_parser.add_argument('--query-file-cp1251', action="store", dest="fin_cp", type=str)
+    query_parser.add_argument('--query-file-utf8', action="store", dest="file_utf", type=str)
+    query_parser.add_argument('--query-file-cp1251', action="store", dest="file_cp", type=str)
     query_parser.add_argument('--query', action="append", dest="queries")
     query_parser.set_defaults(func=query_action)
 

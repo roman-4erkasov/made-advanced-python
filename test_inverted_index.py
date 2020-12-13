@@ -5,7 +5,6 @@ from pdb import set_trace
 import os
 from collections import namedtuple
 
-
 DATASET_TINY_STR = dedent(
     """
     123    some words A_word  and nothing
@@ -183,7 +182,7 @@ def test_can_save_and_load_simple_policy_tiny(tmpdir, small_wiki_inverted_index)
     [
         pytest.param(
             {
-                "A_word":[123, 37],
+                "A_word": [123, 37],
             },
             {
                 "A_word": [123, 37],
@@ -192,7 +191,7 @@ def test_can_save_and_load_simple_policy_tiny(tmpdir, small_wiki_inverted_index)
         ),
         pytest.param(
             {
-                "A_word":[123, 37],
+                "A_word": [123, 37],
             },
             {
                 "B_word": [123, 37],
@@ -201,7 +200,7 @@ def test_can_save_and_load_simple_policy_tiny(tmpdir, small_wiki_inverted_index)
         ),
         pytest.param(
             {
-                "A_word":[123, 37],
+                "A_word": [123, 37],
             },
             {
                 "A_word": [123, 38],
@@ -210,7 +209,7 @@ def test_can_save_and_load_simple_policy_tiny(tmpdir, small_wiki_inverted_index)
         ),
         pytest.param(
             {
-                "A_word":[123, 37],
+                "A_word": [123, 37],
             },
             {
                 "A_word": [123],
@@ -219,7 +218,7 @@ def test_can_save_and_load_simple_policy_tiny(tmpdir, small_wiki_inverted_index)
         ),
         pytest.param(
             {
-                "A_word":[123],
+                "A_word": [123],
             },
             {
                 "A_word": [123, 37],
@@ -228,7 +227,7 @@ def test_can_save_and_load_simple_policy_tiny(tmpdir, small_wiki_inverted_index)
         ),
         pytest.param(
             {
-                "A_word":[123, 37],
+                "A_word": [123, 37],
                 "B_word": [124, 38],
             },
             {
@@ -266,7 +265,7 @@ def test_inverted_index_equality(left, right, are_equal):
     idx_right = inverted_index.InvertedIndex()
     idx_right.data = right
 
-    assert are_equal == (idx_left==idx_right), (
+    assert are_equal == (idx_left == idx_right), (
         "Method InveredIndex.__eq__ works incorrectly"
     )
 
@@ -285,7 +284,6 @@ def test_build_action_smal_wiki(small_wiki_inverted_index, tmpdir):
 
 
 def test_build_action_tiny_dataset(tiny_dataset_fio, tmpdir):
-
     # make etalone
     docs = inverted_index.load_documents(tiny_dataset_fio)
     etalon = inverted_index.build_inverted_index(docs)
@@ -312,16 +310,52 @@ def tiny_inverted_index_fio(tmpdir, tiny_document_sample):
 
 
 @pytest.mark.parametrize(
-    "file_cp, file_utf, queries, output",
+    "queries, output",
     [
-        pytest.param(None, None, ["A_word"], "123 37\n"),
-        # pytest.param("B_word", "2", "37"),
+        pytest.param(["A_word"], "123 37\n"),
+        pytest.param(["B_word"], "2 37\n"),
+        pytest.param(["A_word", "B_word"], "37\n")
     ],
 )
-def test_valid_cli_queries(capsys, tiny_inverted_index_fio, file_cp, file_utf, queries, output):
+def test_valid_cli_queries(capsys, tmpdir, tiny_inverted_index_fio, queries, output):
     Args = namedtuple(
         "Args", ["index", "file_cp", "file_utf", "queries"]
     )
+    args = Args(
+        index=tiny_inverted_index_fio,
+        file_cp=None,
+        file_utf=None,
+        queries=queries
+    )
+    inverted_index.query_action(args)
+    out, err = capsys.readouterr()
+    assert output == out, (
+        "incorrect stdout output"
+    )
+
+
+@pytest.mark.parametrize(
+    "encoding, queries, output",
+    [
+        pytest.param("cp1251", ["A_word"], "123 37\n"),
+        pytest.param("utf8", ["B_word"], "2 37\n"),
+        pytest.param("cp1251", ["A_word", "B_word"], "37\n")
+    ],
+)
+def test_valid_file_queries(capsys, tmpdir, tiny_inverted_index_fio, encoding, queries, output):
+    Args = namedtuple(
+        "Args", ["index", "file_cp", "file_utf", "queries"]
+    )
+    fout = tmpdir.join("queries.txt")
+    for query in queries:
+        fout.write(query+"\n")
+    # set_trace(header="TRACE HEADER")
+    if encoding == "cp1251":
+        file_cp = fout
+        file_utf = None
+    else:
+        file_cp = None
+        file_utf = fout
     args = Args(
         index=tiny_inverted_index_fio,
         file_cp=file_cp,
@@ -330,6 +364,43 @@ def test_valid_cli_queries(capsys, tiny_inverted_index_fio, file_cp, file_utf, q
     )
     inverted_index.query_action(args)
     out, err = capsys.readouterr()
+    assert output == out, (
+        "incorrect stdout output"
+    )
+
+@pytest.mark.parametrize(
+    "encoding, queries, output",
+    [
+        pytest.param("cp1251", ["A_word"], "123 37\n"),
+        pytest.param("utf8", ["B_word"], "2 37\n"),
+        pytest.param("cp1251", ["A_word B_word", "A_word"], "37\n123 37\n")
+    ],
+)
+def test_valid_file_queries(capsys, tmpdir, tiny_inverted_index_fio, encoding, queries, output):
+    Args = namedtuple(
+        "Args", ["index", "file_cp", "file_utf", "queries"]
+    )
+    fout = tmpdir.join("queries.txt")
+    fout.write("\n".join(queries)+"\n")
+    # set_trace(header="TRACE HEADER")
+    if encoding == "cp1251":
+        file_cp = fout
+        file_utf = None
+        queries = None
+    else:
+        file_cp = None
+        file_utf = fout
+        queries = None
+    arguments = Args(
+        index=tiny_inverted_index_fio,
+        file_cp=file_cp,
+        file_utf=file_utf,
+        queries=queries
+    )
+    # set_trace(header="123321")
+    inverted_index.query_action(arguments)
+    out, err = capsys.readouterr()
+    # set_trace(header="123321")
     assert output == out, (
         "incorrect stdout output"
     )
