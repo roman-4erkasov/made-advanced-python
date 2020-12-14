@@ -1,6 +1,7 @@
 from lxml import etree
 import datetime
 import re
+import csv
 
 from pytest import set_trace
 
@@ -18,7 +19,6 @@ def load_stop_words(path):
 
 def process_title(string, stop_words):
     result = set()
-    # for word in string.split():
     for word in re.findall(r"\w+", string.lower()):
         if word not in stop_words:
             result.add(word)
@@ -26,7 +26,6 @@ def process_title(string, stop_words):
 
 
 def extract_doc(string: str, stop_words):
-    # tree = etree.parse(string)
     tree = etree.fromstring(string)
     type_id = tree.get("PostTypeId")
     if str(type_id) == "1":
@@ -56,15 +55,22 @@ def read_docs(path_posts, path_stop_words):
     return docs
 
 
-def extract_query(line: str):
-    pass
-
-
 def read_queries(path):
-    pass
+    queries = []
+    with open(path, encoding='utf-8') as fp:
+        reader = csv.reader(fp, delimiter=",")
+        for row in reader:
+            record = {
+                "year_start": row[0],
+                "year_finish": row[1],
+                "top_n": row[2]
+            }
+            queries.append(record)
+    return queries
 
 
-def process_query(query, doc):
+
+def process_query(query, docs):
     pass
 
 
