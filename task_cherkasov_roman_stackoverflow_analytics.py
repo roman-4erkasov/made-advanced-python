@@ -7,8 +7,15 @@ import csv
 import heapq
 import argparse
 import json
+import logging
+import logging.config
+import yaml
 
 from pytest import set_trace
+
+logger = logging.getLogger("application_logger")
+
+LOG_CONFIG_NM = "logging.conf.yml"
 
 
 def load_stop_words(path):
@@ -63,13 +70,16 @@ def read_docs(path_posts, path_stop_words):
 def generate_indicies(docs):
     word_idx = defaultdict(set)
     year_idx = defaultdict(set)
-    score_idx = defaultdict(set)
     for doc_id, doc in enumerate(docs):
-        year = doc["year"]
-        words = doc["title"]
-        for word in words:
-            word_idx[word].add(doc_id)
-            year_idx[year].add(word)
+        try:
+            logger.debug(f"processing document {doc} for indicies")
+            year = doc["creation_date"].year
+            words = doc["title"]
+            for word in words:
+                word_idx[(year, word)].add(doc_id)
+                year_idx[year].add(word)
+        except Exception as e:
+            logger.warning(f"Exception while processing doc={doc} in 'generate_indicies': {e}")
     return word_idx, year_idx
 
 
@@ -79,28 +89,35 @@ def read_queries(path):
         reader = csv.reader(fp, delimiter=",")
         for row in reader:
             record = {
-                "start": row[0],
-                "finish": row[1],
-                "top_n": row[2]
+                "start": int(row[0]),
+                "finish": int(row[1]),
+                "top_n": int(row[2])
             }
             queries.append(record)
     return queries
 
 
 def process_query(query, word_idx, year_idx, docs):
-
-    words = set()
-    for year in range(query["start"], query["finish"] + 1):
-        words |= year_idx[year]
     word2score = defaultdict(int)
-    for word in words:
-        word2score[word] += docs[word_idx[word]]["score"]
-    score_word = [(v, k) for k, v in word2score.items()]
-    heap = heapq.heapify(score_word)
+    for year in range(query["start"], query["finish"] + 1):
+        words = year_idx[year]
+        for word in words:
+            for wi in word_idx[(year, word)]:
+                word2score[word] += docs[wi]["score"]
+    score_word = [(-v, k) for k, v in word2score.items()]
+    heapq.heapify(score_word)
     result = []
-    for _ in range(query["top_n"]):
-        score, word = heapq.heappop(heap)
-        result.append((word, score))
+    for k in range(query["top_n"]):
+        if len(score_word) > 0:
+            score, word = heapq.heappop(score_word)
+            result.append([word, -score])
+        else:
+            logger.debug(
+                f"not enough data to answer, "
+                f"found {k} words out of {query['top_n']}"
+                f"for period \"{query['start']},{query['finish']}\""
+            )
+            break
     return {
         "start": query["start"],
         "end": query["finish"],
@@ -111,22 +128,38 @@ def process_query(query, word_idx, year_idx, docs):
 def process_queries(queries, docs, word_idx, year_idx):
     responses = []
     for query in queries:
+        logger.debug(f"got query {query['start']},{query['finish']},{query['top_n']}")
         resp = process_query(query, word_idx, year_idx, docs)
         responses.append(resp)
     return responses
 
 
+def setup_logging():
+    with open(LOG_CONFIG_NM) as fp:
+        logging.config.dictConfig(yaml.safe_load(fp.read()))
+
+
 def main():
+    logger.debug("Application started")
+    setup_logging()
     parser = argparse.ArgumentParser(description='Work with inverted_index.py')
     parser.add_argument('--questions', action="store", dest="questions", type=str, required=True)
     parser.add_argument('--stop-words', action="store", dest="stop_words", type=str, required=True)
-    parser.add_argument('--queries', action="store", dest="questions", type=str, required=True)
+    parser.add_argument('--queries', action="store", dest="queries", type=str, required=True)
 
     args = parser.parse_args()
-    queries = read_queries(args.queries)
+    logger.info("process XML dtaset")
     docs = read_docs(args.questions, args.stop_words)
+    logger.info("process XML dtaset, ready to serve queries")
+    queries = read_queries(args.queries)
+    logger.info("finish processing queries")
     word_idx, year_idx = generate_indicies(docs)
     responses = process_queries(queries, docs, word_idx, year_idx)
     for resp in responses:
         s = json.dumps(resp)
         print(s)
+    logger.debug("Application finished.")
+
+
+if __name__ == '__main__':
+    main()
