@@ -1,5 +1,5 @@
 import pytest
-from task_Cherkasov_Roman_asset_web_service import app
+from task_cherkasov_roman_asset_web_service import app
 
 
 NOT_EXISTING_PATH = "/THIS_PATH_DOES_NOT_EXIST"
