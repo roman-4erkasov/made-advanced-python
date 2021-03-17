@@ -215,20 +215,7 @@ def main():
         parser.print_usage()
     else:
         args.func(args)
-    #
-    # if args.command == "build":
-    #     print(f"command={args.command}")
-    #
-    # elif args.command == "query":
-    #     print(f"command={args.command}")
 
-
-# documents = load_documents("/path/to/dataset")
-# inverted_index = build_inverted_index(documents)
-#
-# inverted_index.dump("/path/to/inverted.index")
-# inverted_index = InvertedIndex.load("/path/to/inverted.index")
-# document_ids = inverted_index.query(["two", "words"])
 
 
 if __name__ == "__main__":
